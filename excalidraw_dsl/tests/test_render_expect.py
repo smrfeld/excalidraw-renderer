@@ -35,7 +35,8 @@ def test_render_dsl_expect() -> None:
     rendered = render_dsl(diagram)
     elements = [_strip_runtime_fields(el) for el in rendered["elements"]]
 
-    expected = EXPECT_PATH.read_text(encoding="utf-8").strip()
+    expected_data = json.loads(EXPECT_PATH.read_text(encoding="utf-8"))
+    expected = _normalize(expected_data).strip()
     actual = _normalize(elements).strip()
 
     if actual != expected:
