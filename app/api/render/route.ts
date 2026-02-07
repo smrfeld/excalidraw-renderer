@@ -1,14 +1,31 @@
 import { NextResponse } from "next/server";
 import type { Browser } from "playwright";
 import { chromium } from "playwright";
-import { createRequire } from "module";
+import path from "path";
+import fs from "fs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const require = createRequire(import.meta.url);
-const excalidrawPath = require.resolve(
-    "@excalidraw/excalidraw/dist/excalidraw.production.min.js",
+const nodeModulesRoot = path.join(process.cwd(), "node_modules");
+const reactPath = path.join(
+    nodeModulesRoot,
+    "react",
+    "umd",
+    "react.production.min.js",
+);
+const reactDomPath = path.join(
+    nodeModulesRoot,
+    "react-dom",
+    "umd",
+    "react-dom.production.min.js",
+);
+const excalidrawPath = path.join(
+    nodeModulesRoot,
+    "@excalidraw",
+    "excalidraw",
+    "dist",
+    "excalidraw.production.min.js",
 );
 
 type RenderPayload = {
@@ -48,13 +65,52 @@ export async function POST(request: Request) {
 
     const browser = await getBrowser();
     const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => {
+        pageErrors.push(error.message);
+    });
 
     try {
         await page.setContent(
             "<!doctype html><html><head><meta charset=\"utf-8\" /></head><body><div id=\"root\"></div></body></html>",
             { waitUntil: "domcontentloaded" },
         );
-        await page.addScriptTag({ path: excalidrawPath });
+        await page.addScriptTag({ content: fs.readFileSync(reactPath, "utf-8") });
+        await page.evaluate(() => {
+            if (!(window as any).React) {
+                throw new Error("React global not available");
+            }
+        });
+
+        await page.addScriptTag({ content: fs.readFileSync(reactDomPath, "utf-8") });
+        await page.evaluate(() => {
+            if (!(window as any).ReactDOM) {
+                throw new Error("ReactDOM global not available");
+            }
+        });
+
+        await page.evaluate(() => {
+            const w = window as any;
+            if (!w.ReactJSXRuntime && w.React) {
+                w.ReactJSXRuntime = {
+                    jsx: w.React.createElement,
+                    jsxs: w.React.createElement,
+                    Fragment: w.React.Fragment,
+                };
+                if (w.self) {
+                    w.self.ReactJSXRuntime = w.ReactJSXRuntime;
+                }
+                if (w.globalThis) {
+                    w.globalThis.ReactJSXRuntime = w.ReactJSXRuntime;
+                }
+            }
+        });
+        await page.addScriptTag({ content: fs.readFileSync(excalidrawPath, "utf-8") });
+        await page.evaluate(() => {
+            if (!(window as any).ExcalidrawLib) {
+                throw new Error("ExcalidrawLib global not available");
+            }
+        });
 
         const bytes = await page.evaluate(async (data) => {
             const lib = (window as unknown as { ExcalidrawLib?: any }).ExcalidrawLib;
@@ -86,7 +142,8 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : "Render failed";
-        return NextResponse.json({ error: message }, { status: 500 });
+        const detail = pageErrors.length > 0 ? ` | Page errors: ${pageErrors.join(" | ")}` : "";
+        return NextResponse.json({ error: `${message}${detail}` }, { status: 500 });
     } finally {
         await page.close();
     }
