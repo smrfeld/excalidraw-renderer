@@ -86,6 +86,10 @@
             "updated": 1741529141002,
             "link": null,
             "locked": false,
+            "points": [
+                [0, 0],
+                [75, 0]
+            ],
             "startBinding": null,
             "endBinding": null,
             "lastCommittedPoint": null,
