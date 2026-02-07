@@ -1,8 +1,3 @@
-"""Deprecated shim for the DSL renderer.
+"""Deprecated wrapper for the excalidraw_dsl subpackage."""
 
-Prefer importing from excalidraw_dsl.renderer instead.
-"""
-
-from .renderer import render_dsl
-
-__all__ = ["render_dsl"]
+from .excalidraw_dsl.compiler import *  # type: ignore F401,F403

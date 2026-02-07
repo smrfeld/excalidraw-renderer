@@ -25,4 +25,4 @@ package-dir = { "" = "." }
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["excalidraw_renderer*", "excalidraw_dsl*"]
+include = ["excalidraw_renderer*"]

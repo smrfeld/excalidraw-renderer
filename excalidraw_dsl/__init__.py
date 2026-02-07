@@ -1,31 +1,4 @@
-"""Minimal DSL renderer for Excalidraw scenes."""
+"""Deprecated wrapper for the excalidraw_dsl subpackage."""
 
-from .renderer import render_dsl
-from .model import (
-    Arrow,
-    ArrowEndpoint,
-    Box,
-    Diagram,
-    Diamond,
-    Ellipse,
-    StyleOverrides,
-    StylePreset,
-    Text,
-)
-from .state import RenderState
-from .types import BBox
-
-__all__ = [
-    "Arrow",
-    "ArrowEndpoint",
-    "BBox",
-    "Box",
-    "RenderState",
-    "Diagram",
-    "Diamond",
-    "Ellipse",
-    "StyleOverrides",
-    "StylePreset",
-    "Text",
-    "render_dsl",
-]
+from .excalidraw_dsl import *  # type: ignore F401,F403
+from .excalidraw_dsl import __all__  # type: ignore F401
