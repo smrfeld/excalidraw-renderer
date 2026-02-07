@@ -18,6 +18,25 @@ def parse_args() -> argparse.Namespace:
         default="http://localhost:3000/api/render",
         help="Render API endpoint",
     )
+    parser.add_argument(
+        "--scale",
+        type=float,
+        help="PNG scale factor (e.g. 2 for 2x)",
+    )
+    parser.add_argument(
+        "--padding",
+        type=float,
+        help="Padding around the drawing in pixels",
+    )
+    parser.add_argument(
+        "--background",
+        help="Background color (e.g. #ffffff or transparent)",
+    )
+    parser.add_argument(
+        "--dark",
+        action="store_true",
+        help="Export with dark mode enabled",
+    )
     return parser.parse_args()
 
 
@@ -26,6 +45,15 @@ def main() -> int:
 
     with open(args.input, "r", encoding="utf-8") as handle:
         payload = json.load(handle)
+
+    if args.scale is not None:
+        payload["exportScale"] = args.scale
+    if args.padding is not None:
+        payload["exportPadding"] = args.padding
+    if args.background is not None:
+        payload["backgroundColor"] = args.background
+    if args.dark:
+        payload["darkMode"] = True
 
     data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(

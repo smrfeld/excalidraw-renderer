@@ -29,6 +29,13 @@ Example payload (same shape as public/example_drawing.json):
 
 The response is a PNG image.
 
+Optional render settings (include in the JSON body):
+
+- exportScale: number (e.g. 2 for 2x size / sharper output)
+- exportPadding: number (pixels of padding around the drawing)
+- backgroundColor: string (e.g. "#ffffff" or "transparent")
+- darkMode: boolean
+
 Note: the renderer uses Playwright/Chromium. If the browser binaries are missing on your machine, install them with Playwright.
 
 ## Python client
@@ -36,6 +43,10 @@ Note: the renderer uses Playwright/Chromium. If the browser binaries are missing
 With the dev server running, render a JSON file to PNG:
 
 python scripts/render_png.py public/example_drawing.json output.png
+
+With options:
+
+python scripts/render_png.py public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
 
 ## Structure
 

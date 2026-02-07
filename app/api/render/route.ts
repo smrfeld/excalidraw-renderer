@@ -32,6 +32,10 @@ type RenderPayload = {
     elements: unknown[];
     appState?: Record<string, unknown>;
     files?: Record<string, unknown>;
+    exportScale?: number;
+    exportPadding?: number;
+    backgroundColor?: string;
+    darkMode?: boolean;
 };
 
 let browserPromise: Promise<Browser> | null = null;
@@ -61,6 +65,33 @@ export async function POST(request: Request) {
             { error: "Payload must include an elements array" },
             { status: 400 },
         );
+    }
+
+    if (payload.exportScale !== undefined) {
+        if (typeof payload.exportScale !== "number" || payload.exportScale <= 0) {
+            return NextResponse.json(
+                { error: "exportScale must be a positive number" },
+                { status: 400 },
+            );
+        }
+    }
+
+    if (payload.exportPadding !== undefined) {
+        if (typeof payload.exportPadding !== "number" || payload.exportPadding < 0) {
+            return NextResponse.json(
+                { error: "exportPadding must be a non-negative number" },
+                { status: 400 },
+            );
+        }
+    }
+
+    if (payload.backgroundColor !== undefined) {
+        if (typeof payload.backgroundColor !== "string") {
+            return NextResponse.json(
+                { error: "backgroundColor must be a string" },
+                { status: 400 },
+            );
+        }
     }
 
     const browser = await getBrowser();
@@ -118,16 +149,26 @@ export async function POST(request: Request) {
                 throw new Error("Excalidraw export library not available");
             }
 
-            const blob = await lib.exportToBlob({
+            const exportOptions: Record<string, unknown> = {
                 elements: data.elements,
                 appState: {
-                    exportWithDarkMode: false,
-                    viewBackgroundColor: "#ffffff",
+                    exportWithDarkMode: data.darkMode ?? false,
+                    viewBackgroundColor: data.backgroundColor ?? "#ffffff",
                     ...(data.appState ?? {}),
                 },
                 files: data.files ?? {},
                 mimeType: "image/png",
-            });
+            };
+
+            if (data.exportScale !== undefined) {
+                exportOptions.exportScale = data.exportScale;
+            }
+
+            if (data.exportPadding !== undefined) {
+                exportOptions.exportPadding = data.exportPadding;
+            }
+
+            const blob = await lib.exportToBlob(exportOptions);
 
             const buffer = await blob.arrayBuffer();
             return Array.from(new Uint8Array(buffer));
