@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+
+import expect_def as expect
 
 from excalidraw_dsl import Arrow, ArrowEndpoint, Box, Diagram, render_dsl
 
@@ -11,13 +12,11 @@ def _strip_runtime_fields(element: dict) -> dict:
     return {k: v for k, v in element.items() if k not in drop_keys}
 
 
-EXPECT_PATH = Path(__file__).with_name("render_expect.json")
-
-
 def _normalize(elements: list[dict]) -> str:
     return json.dumps(elements, indent=2, sort_keys=True)
 
 
+@expect.test
 def test_render_dsl_expect() -> None:
     diagram = Diagram(
         grid=10,
@@ -35,12 +34,102 @@ def test_render_dsl_expect() -> None:
     rendered = render_dsl(diagram)
     elements = [_strip_runtime_fields(el) for el in rendered["elements"]]
 
-    expected_data = json.loads(EXPECT_PATH.read_text(encoding="utf-8"))
-    expected = _normalize(expected_data).strip()
-    actual = _normalize(elements).strip()
+    print(_normalize(elements))
 
-    if actual != expected:
-        print("EXPECTED:\n" + expected)
-        print("ACTUAL:\n" + actual)
-
-    assert actual == expected
+    """
+    [
+        {
+            "angle": 0,
+            "backgroundColor": "transparent",
+            "boundElements": null,
+            "fillStyle": "solid",
+            "frameId": null,
+            "groupIds": [],
+            "height": 60,
+            "id": "a",
+            "isDeleted": false,
+            "link": null,
+            "locked": false,
+            "opacity": 100,
+            "roughness": 1,
+            "roundness": {
+                "type": 3
+            },
+            "strokeColor": "#1e1e1e",
+            "strokeStyle": "solid",
+            "strokeWidth": 2,
+            "type": "rectangle",
+            "version": 1,
+            "width": 100,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "angle": 0,
+            "backgroundColor": "transparent",
+            "boundElements": null,
+            "fillStyle": "solid",
+            "frameId": null,
+            "groupIds": [],
+            "height": 60,
+            "id": "b",
+            "isDeleted": false,
+            "link": null,
+            "locked": false,
+            "opacity": 100,
+            "roughness": 1,
+            "roundness": {
+                "type": 3
+            },
+            "strokeColor": "#1e1e1e",
+            "strokeStyle": "solid",
+            "strokeWidth": 2,
+            "type": "rectangle",
+            "version": 1,
+            "width": 100,
+            "x": 200,
+            "y": 0
+        },
+        {
+            "angle": 0,
+            "backgroundColor": "transparent",
+            "boundElements": null,
+            "endArrowhead": "arrow",
+            "endBinding": null,
+            "fillStyle": "solid",
+            "frameId": null,
+            "groupIds": [],
+            "height": 0,
+            "id": "arrow-ab",
+            "isDeleted": false,
+            "lastCommittedPoint": null,
+            "link": null,
+            "locked": false,
+            "opacity": 100,
+            "points": [
+                [
+                    0,
+                    0
+                ],
+                [
+                    100,
+                    0
+                ]
+            ],
+            "roughness": 1,
+            "roundness": {
+                "type": 2
+            },
+            "startArrowhead": null,
+            "startBinding": null,
+            "strokeColor": "#1e1e1e",
+            "strokeStyle": "solid",
+            "strokeWidth": 2,
+            "type": "arrow",
+            "version": 1,
+            "width": 100,
+            "x": 100,
+            "y": 30
+        }
+    ]
+    """
