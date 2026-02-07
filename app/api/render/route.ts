@@ -34,6 +34,8 @@ type RenderPayload = {
     files?: Record<string, unknown>;
     exportScale?: number;
     exportPadding?: number;
+    maxSize?: number;
+    quality?: number;
     backgroundColor?: string;
     darkMode?: boolean;
 };
@@ -80,6 +82,28 @@ export async function POST(request: Request) {
         if (typeof payload.exportPadding !== "number" || payload.exportPadding < 0) {
             return NextResponse.json(
                 { error: "exportPadding must be a non-negative number" },
+                { status: 400 },
+            );
+        }
+    }
+
+    if (payload.maxSize !== undefined) {
+        if (typeof payload.maxSize !== "number" || payload.maxSize <= 0) {
+            return NextResponse.json(
+                { error: "maxSize must be a positive number" },
+                { status: 400 },
+            );
+        }
+    }
+
+    if (payload.quality !== undefined) {
+        if (
+            typeof payload.quality !== "number"
+            || payload.quality <= 0
+            || payload.quality > 1
+        ) {
+            return NextResponse.json(
+                { error: "quality must be a number between 0 and 1" },
                 { status: 400 },
             );
         }
@@ -160,8 +184,21 @@ export async function POST(request: Request) {
                 mimeType: "image/png",
             };
 
+            if (data.maxSize !== undefined) {
+                exportOptions.maxWidthOrHeight = data.maxSize;
+            }
+
+            if (data.quality !== undefined) {
+                exportOptions.quality = data.quality;
+            }
+
             if (data.exportScale !== undefined) {
-                exportOptions.exportScale = data.exportScale;
+                const scale = data.exportScale;
+                exportOptions.getDimensions = (width: number, height: number) => ({
+                    width: width * scale,
+                    height: height * scale,
+                    scale,
+                });
             }
 
             if (data.exportPadding !== undefined) {

@@ -33,6 +33,8 @@ Optional render settings (include in the JSON body):
 
 - exportScale: number (e.g. 2 for 2x size / sharper output)
 - exportPadding: number (pixels of padding around the drawing)
+- maxSize: number (max width/height in pixels)
+- quality: number (0-1, primarily for lossy formats)
 - backgroundColor: string (e.g. "#ffffff" or "transparent")
 - darkMode: boolean
 
@@ -47,6 +49,10 @@ python main.py public/example_drawing.json output.png
 With options:
 
 python main.py public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
+
+Scale-based sharpness example:
+
+python main.py public/example_drawing.json output.png --scale 4
 
 ## Installable package (optional)
 

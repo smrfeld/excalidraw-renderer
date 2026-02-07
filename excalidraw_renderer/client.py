@@ -13,6 +13,8 @@ def render_png(
     endpoint: str = "http://localhost:3000/api/render",
     export_scale: float | None = None,
     export_padding: float | None = None,
+    max_size: float | None = None,
+    quality: float | None = None,
     background_color: str | None = None,
     dark_mode: bool = False,
 ) -> None:
@@ -28,6 +30,10 @@ def render_png(
         payload["exportScale"] = export_scale
     if export_padding is not None:
         payload["exportPadding"] = export_padding
+    if max_size is not None:
+        payload["maxSize"] = max_size
+    if quality is not None:
+        payload["quality"] = quality
     if background_color is not None:
         payload["backgroundColor"] = background_color
     if dark_mode:

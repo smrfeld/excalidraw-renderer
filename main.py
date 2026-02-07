@@ -26,6 +26,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Padding around the drawing in pixels",
     )
     parser.add_argument(
+        "--max-size",
+        type=float,
+        help="Maximum width or height of the output image in pixels",
+    )
+    parser.add_argument(
+        "--quality",
+        type=float,
+        help="Image quality (0-1, primarily for lossy formats)",
+    )
+    parser.add_argument(
         "--background",
         help="Background color (e.g. #ffffff or transparent)",
     )
@@ -48,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
             endpoint=args.endpoint,
             export_scale=args.scale,
             export_padding=args.padding,
+            max_size=args.max_size,
+            quality=args.quality,
             background_color=args.background,
             dark_mode=args.dark,
         )
