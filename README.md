@@ -13,6 +13,7 @@ A very minimal example showing Excalidraw running in a local browser using Next.
 ## Run
 
 ```bash
+cd server
 npm install
 npm run dev
 ```
@@ -23,7 +24,7 @@ Open http://localhost:3000
 
 POST /api/render with a JSON body containing an Excalidraw scene.
 
-Example payload (same shape as public/example_drawing.json):
+Example payload (same shape as server/public/example_drawing.json):
 
 { "elements": [ ... ] }
 
@@ -44,15 +45,15 @@ Note: the renderer uses Playwright/Chromium. If the browser binaries are missing
 
 With the dev server running, render a JSON file to PNG:
 
-python main.py public/example_drawing.json output.png
+python main.py server/public/example_drawing.json output.png
 
 With options:
 
-python main.py public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
+python main.py server/public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
 
 Scale-based sharpness example:
 
-python main.py public/example_drawing.json output.png --scale 4
+python main.py server/public/example_drawing.json output.png --scale 4
 
 ## Installable package (optional)
 
@@ -62,15 +63,15 @@ pip install -e .
 
 Then use the console script:
 
-excalidraw-render public/example_drawing.json output.png --scale 2 --padding 24
+excalidraw-render server/public/example_drawing.json output.png --scale 2 --padding 24
 
 ## Structure
 
-- app/page.tsx: loads JSON, renders Excalidraw, exports a PNG preview
-- app/layout.tsx: minimal layout
-- app/globals.css: minimal styles
-- public/example_drawing.json: the Excalidraw scene file loaded at runtime
-- app/api/render/route.ts: headless renderer that returns PNGs
+- server/app/page.tsx: loads JSON, renders Excalidraw, exports a PNG preview
+- server/app/layout.tsx: minimal layout
+- server/app/globals.css: minimal styles
+- server/public/example_drawing.json: the Excalidraw scene file loaded at runtime
+- server/app/api/render/route.ts: headless renderer that returns PNGs
 - excalidraw_renderer/: Python package for rendering
 - main.py: CLI entry point for rendering
 - scripts/render_png.py: legacy wrapper for the render CLI

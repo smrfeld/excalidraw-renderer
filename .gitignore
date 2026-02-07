@@ -1,4 +1,5 @@
 /node_modules
+/server/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -8,7 +9,9 @@
 !.yarn/versions
 /coverage
 /.next/
+/server/.next/
 /out/
+/server/out/
 /build
 .DS_Store
 *.pem

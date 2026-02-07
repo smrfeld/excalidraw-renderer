@@ -7,7 +7,23 @@ import fs from "fs";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const nodeModulesRoot = path.join(process.cwd(), "node_modules");
+const resolveNodeModulesRoot = () => {
+    const candidates = [
+        path.join(process.cwd(), "node_modules"),
+        path.join(process.cwd(), "server", "node_modules"),
+        path.join(process.cwd(), "..", "node_modules"),
+    ];
+
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    return candidates[0];
+};
+
+const nodeModulesRoot = resolveNodeModulesRoot();
 const reactPath = path.join(
     nodeModulesRoot,
     "react",
