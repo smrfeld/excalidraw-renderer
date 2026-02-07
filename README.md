@@ -38,15 +38,25 @@ Optional render settings (include in the JSON body):
 
 Note: the renderer uses Playwright/Chromium. If the browser binaries are missing on your machine, install them with Playwright.
 
-## Python client
+## Python entry point
 
 With the dev server running, render a JSON file to PNG:
 
-python scripts/render_png.py public/example_drawing.json output.png
+python main.py public/example_drawing.json output.png
 
 With options:
 
-python scripts/render_png.py public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
+python main.py public/example_drawing.json output.png --scale 2 --padding 24 --background "#ffffff"
+
+## Installable package (optional)
+
+Install in editable mode:
+
+pip install -e .
+
+Then use the console script:
+
+excalidraw-render public/example_drawing.json output.png --scale 2 --padding 24
 
 ## Structure
 
@@ -55,4 +65,6 @@ python scripts/render_png.py public/example_drawing.json output.png --scale 2 --
 - app/globals.css: minimal styles
 - public/example_drawing.json: the Excalidraw scene file loaded at runtime
 - app/api/render/route.ts: headless renderer that returns PNGs
-- scripts/render_png.py: CLI client to call the render API
+- excalidraw_renderer/: Python package for rendering
+- main.py: CLI entry point for rendering
+- scripts/render_png.py: legacy wrapper for the render CLI

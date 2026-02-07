@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "excalidraw-renderer"
+version = "0.1.0"
+description = "Render Excalidraw JSON scenes to PNG via a local render API."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Excalidraw Render" }]
+keywords = ["excalidraw", "render", "png"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+]
+
+[project.scripts]
+excalidraw-render = "main:main"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["excalidraw_renderer*"]

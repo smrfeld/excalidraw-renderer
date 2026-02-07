@@ -22,3 +22,5 @@ yarn-error.log*
 next-env.d.ts
 .vscode
 *.png
+*.egg-info
+__pycache__/
