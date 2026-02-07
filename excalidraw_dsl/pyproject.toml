@@ -12,17 +12,18 @@ license = { text = "MIT" }
 authors = [{ name = "Excalidraw DSL" }]
 keywords = ["excalidraw", "dsl", "render"]
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["excalidraw_dsl*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
+pythonpath = ["src"]
 testpaths = ["tests"]

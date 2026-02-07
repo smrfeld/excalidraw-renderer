@@ -27,3 +27,4 @@ next-env.d.ts
 *.png
 *.egg-info
 __pycache__/
+.pytest_cache/
