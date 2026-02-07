@@ -19,6 +19,58 @@ pip install .
 python main.py examples output --scale 3
 ```
 
+## Examples
+
+See the [examples](examples) and [examples_output](examples_output) directories.
+
+Input:
+
+```json
+{
+    "elements": [
+        {
+            "id": "OvFzWA-pEiIIkhrhZ_P_q",
+            "type": "rectangle",
+            "x": 368,
+            "y": 533,
+            "width": 63,
+            "height": 62,
+            "angle": 0,
+            "strokeColor": "#1e1e1e",
+            "backgroundColor": "transparent",
+            "fillStyle": "solid",
+            "strokeWidth": 2,
+            "strokeStyle": "solid",
+            "roughness": 1,
+            "opacity": 100,
+            "groupIds": [],
+            "frameId": null,
+            "roundness": {
+                "type": 3
+            },
+            "seed": 1549100027,
+            "version": 11,
+            "versionNonce": 496088635,
+            "isDeleted": false,
+            "boundElements": null,
+            "updated": 1741529136613,
+            "link": null,
+            "locked": false
+        },
+        ...
+    ]
+}
+```
+
+Output:
+
+![](examples_output/example1.png)
+
+More outputs:
+
+![](examples_output/example2.png)
+![](examples_output/example3.png)
+
 ## Other server commands
 
 - `npm run build`
