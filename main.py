@@ -1,75 +1,68 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
+
+import click
 
 from excalidraw_renderer.client import render_png
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Render Excalidraw JSON to PNG")
-    parser.add_argument("input", help="Path to Excalidraw JSON file")
-    parser.add_argument("output", help="Path to write PNG")
-    parser.add_argument(
-        "--endpoint",
-        default="http://localhost:3000/api/render",
-        help="Render API endpoint",
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        help="PNG scale factor (e.g. 2 for 2x)",
-    )
-    parser.add_argument(
-        "--padding",
-        type=float,
-        help="Padding around the drawing in pixels",
-    )
-    parser.add_argument(
-        "--max-size",
-        type=float,
-        help="Maximum width or height of the output image in pixels",
-    )
-    parser.add_argument(
-        "--quality",
-        type=float,
-        help="Image quality (0-1, primarily for lossy formats)",
-    )
-    parser.add_argument(
-        "--background",
-        help="Background color (e.g. #ffffff or transparent)",
-    )
-    parser.add_argument(
-        "--dark",
-        action="store_true",
-        help="Export with dark mode enabled",
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.argument("input", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.argument("output", type=click.Path(dir_okay=False, path_type=Path))
+@click.option(
+    "--endpoint",
+    default="http://localhost:3000/api/render",
+    show_default=True,
+    help="Render API endpoint",
+)
+@click.option("--scale", type=float, help="PNG scale factor (e.g. 2 for 2x)")
+@click.option("--padding", type=float, help="Padding around the drawing in pixels")
+@click.option(
+    "--max-size",
+    type=float,
+    help="Maximum width or height of the output image in pixels",
+)
+@click.option(
+    "--quality",
+    type=float,
+    help="Image quality (0-1, primarily for lossy formats)",
+)
+@click.option(
+    "--background",
+    help="Background color (e.g. #ffffff or transparent)",
+)
+@click.option("--dark", is_flag=True, help="Export with dark mode enabled")
+def main(
+    input: Path,
+    output: Path,
+    endpoint: str,
+    scale: float | None,
+    padding: float | None,
+    max_size: float | None,
+    quality: float | None,
+    background: str | None,
+    dark: bool,
+) -> None:
+    """Render an Excalidraw JSON file to PNG via the local render API."""
 
     try:
         render_png(
-            Path(args.input),
-            Path(args.output),
-            endpoint=args.endpoint,
-            export_scale=args.scale,
-            export_padding=args.padding,
-            max_size=args.max_size,
-            quality=args.quality,
-            background_color=args.background,
-            dark_mode=args.dark,
+            input,
+            output,
+            endpoint=endpoint,
+            export_scale=scale,
+            export_padding=padding,
+            max_size=max_size,
+            quality=quality,
+            background_color=background,
+            dark_mode=dark,
         )
     except RuntimeError as exc:
-        parser.error(str(exc))
-        return 1
+        raise click.ClickException(str(exc)) from exc
 
-    print(f"Wrote {args.output}")
-    return 0
+    click.echo(f"Wrote {output}")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
