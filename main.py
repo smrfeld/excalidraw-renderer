@@ -3,13 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import click
+from tqdm import tqdm
 
 from excalidraw_renderer.client import render_png
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.argument("input", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument("output", type=click.Path(dir_okay=False, path_type=Path))
+@click.argument("input", type=click.Path(exists=True, path_type=Path))
+@click.argument("output", type=click.Path(path_type=Path))
 @click.option(
     "--endpoint",
     default="http://localhost:3000/api/render",
@@ -44,7 +45,41 @@ def main(
     background: str | None,
     dark: bool,
 ) -> None:
-    """Render an Excalidraw JSON file to PNG via the local render API."""
+    """Render Excalidraw JSON file(s) to PNG via the local render API."""
+
+    if input.is_dir():
+        if output.exists() and output.is_file():
+            raise click.ClickException("When input is a directory, output must be a directory")
+        if output.suffix:
+            raise click.ClickException("Output must be a directory path when input is a directory")
+
+        output.mkdir(parents=True, exist_ok=True)
+        json_files = sorted(input.glob("*.json"))
+        if not json_files:
+            raise click.ClickException("No .json files found in input directory")
+
+        for json_path in tqdm(json_files, desc="Rendering", unit="file"):
+            out_path = output / f"{json_path.stem}.png"
+            try:
+                render_png(
+                    json_path,
+                    out_path,
+                    endpoint=endpoint,
+                    export_scale=scale,
+                    export_padding=padding,
+                    max_size=max_size,
+                    quality=quality,
+                    background_color=background,
+                    dark_mode=dark,
+                )
+            except RuntimeError as exc:
+                raise click.ClickException(f"{json_path.name}: {exc}") from exc
+
+        click.echo(f"Wrote {len(json_files)} file(s) to {output}")
+        return
+
+    if output.exists() and output.is_dir():
+        raise click.ClickException("When input is a file, output must be a file path")
 
     try:
         render_png(

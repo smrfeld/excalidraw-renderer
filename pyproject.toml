@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Render Excalidraw JSON scenes to PNG via a local render API."
 readme = "README.md"
 requires-python = ">=3.9"
-dependencies = ["click>=8.1"]
+dependencies = ["click>=8.1", "tqdm>=4.66"]
 license = { text = "MIT" }
 authors = [{ name = "Excalidraw Render" }]
 keywords = ["excalidraw", "render", "png"]
