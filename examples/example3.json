@@ -87,8 +87,14 @@
             "link": null,
             "locked": false,
             "points": [
-                [0, 0],
-                [75, 0]
+                [
+                    0,
+                    0
+                ],
+                [
+                    75,
+                    0
+                ]
             ],
             "startBinding": null,
             "endBinding": null,

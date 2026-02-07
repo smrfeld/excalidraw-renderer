@@ -49,9 +49,13 @@ def main(
 
     if input.is_dir():
         if output.exists() and output.is_file():
-            raise click.ClickException("When input is a directory, output must be a directory")
+            raise click.ClickException(
+                "When input is a directory, output must be a directory"
+            )
         if output.suffix:
-            raise click.ClickException("Output must be a directory path when input is a directory")
+            raise click.ClickException(
+                "Output must be a directory path when input is a directory"
+            )
 
         output.mkdir(parents=True, exist_ok=True)
         json_files = sorted(input.glob("*.json"))

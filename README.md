@@ -1,24 +1,30 @@
-# Minimal Excalidraw example with Next.js
+# Render Excalidraw drawings
 
-A very minimal example showing Excalidraw running in a local browser using Next.js App Router.
-
-## Packages used
-
-- next: React framework
-- react, react-dom: React runtime
-- @excalidraw/excalidraw: Excalidraw canvas
-- typescript, @types/*: TypeScript types
-- eslint, eslint-config-next: linting
+Render excalidraw drawings to images. A Python API sends JSON files to a server. The API can be accessed from CLI or as a Python package.
 
 ## Run
 
+In the main directory, start the server:
+
 ```bash
-cd server
-npm install
+npm install --prefix server
 npm run dev
 ```
 
-Open http://localhost:3000
+
+Then:
+
+```python
+pip install .
+python main.py examples output --scale 3
+```
+
+## Other server commands
+
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+
 
 ## Render API (PNG output)
 
@@ -55,6 +61,10 @@ Scale-based sharpness example:
 
 python main.py server/public/example_drawing.json output.png --scale 4
 
+Render a whole directory (all .json files):
+
+python main.py examples output_dir --scale 4
+
 ## Installable package (optional)
 
 Install in editable mode:
@@ -64,6 +74,10 @@ pip install -e .
 Then use the console script:
 
 excalidraw-render server/public/example_drawing.json output.png --scale 2 --padding 24
+
+Directory mode:
+
+excalidraw-render examples output_dir --scale 4
 
 ## Structure
 
@@ -75,3 +89,4 @@ excalidraw-render server/public/example_drawing.json output.png --scale 2 --padd
 - excalidraw_renderer/: Python package for rendering
 - main.py: CLI entry point for rendering
 - scripts/render_png.py: legacy wrapper for the render CLI
+- examples/: sample Excalidraw JSON files
