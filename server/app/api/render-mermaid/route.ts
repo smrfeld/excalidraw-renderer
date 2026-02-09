@@ -211,7 +211,7 @@ export async function POST(request: Request) {
                         htmlLabels: false,
                     },
                     class: {
-                        htmlLabels: false,
+                        htmlLabels: true,
                     },
                 };
 
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
 
                 const elements = lib.convertToExcalidrawElements(
                     result.elements ?? [],
-                    { regenerateIds: false },
+                    { regenerateIds: true },
                 );
                 const files = result.files ?? {};
 

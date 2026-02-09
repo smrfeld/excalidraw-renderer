@@ -94,7 +94,6 @@ Output:
 
 More outputs:
 
-![](examples_mermaid_output/classdiagram.png)
 ![](examples_mermaid_output/sequence.png)
 
 ## Other server commands
