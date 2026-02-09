@@ -90,6 +90,16 @@ Example payload (same shape as `server/public/example_drawing.json`):
 
 The response is a PNG image.
 
+### Mermaid render endpoint
+
+POST `/api/render-mermaid` with JSON body:
+
+```json
+{ "mermaid": "graph TD; A-->B;" }
+```
+
+Optional fields mirror `/api/render` (exportScale, exportPadding, maxSize, quality, backgroundColor, darkMode) and `config` for Mermaid settings.
+
 Optional render settings (include in the JSON body):
 
 - `exportScale`: number (e.g. `2` for 2x size / sharper output)
@@ -154,6 +164,7 @@ excalidraw-render examples output_dir --scale 4
 - `server/app/globals.css`: minimal styles
 - `server/public/example_drawing.json`: the Excalidraw scene file loaded at runtime
 - `server/app/api/render/route.ts`: headless renderer that returns PNGs
+- `server/app/api/render-mermaid/route.ts`: render Mermaid diagrams to PNGs
 - `excalidraw_renderer/`: Python package for rendering
 - `main.py`: CLI entry point for rendering
 - `scripts/render_png.py`: legacy wrapper for the render CLI
