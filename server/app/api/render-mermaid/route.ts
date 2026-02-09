@@ -309,23 +309,25 @@ export async function POST(request: Request) {
         };
 
         if (dom.window.SVGElement?.prototype) {
-            dom.window.SVGElement.prototype.getBBox = getBBoxPolyfill as any;
+            (dom.window.SVGElement.prototype as any).getBBox = getBBoxPolyfill as any;
         }
 
         if (dom.window.SVGGraphicsElement?.prototype) {
-            dom.window.SVGGraphicsElement.prototype.getBBox = getBBoxPolyfill as any;
+            (dom.window.SVGGraphicsElement.prototype as any).getBBox = getBBoxPolyfill as any;
         }
 
         if ((dom.window as any).SVGTextContentElement?.prototype) {
-            (dom.window as any).SVGTextContentElement.prototype.getBBox = getBBoxPolyfill as any;
+            ((dom.window as any).SVGTextContentElement.prototype as any).getBBox =
+                getBBoxPolyfill as any;
         }
 
         if ((dom.window as any).SVGTextElement?.prototype) {
-            (dom.window as any).SVGTextElement.prototype.getBBox = getBBoxPolyfill as any;
+            ((dom.window as any).SVGTextElement.prototype as any).getBBox =
+                getBBoxPolyfill as any;
         }
 
         if (dom.window.Element?.prototype) {
-            dom.window.Element.prototype.getBBox = getBBoxPolyfill as any;
+            (dom.window.Element.prototype as any).getBBox = getBBoxPolyfill as any;
         }
 
         (globalThis as any).window = dom.window;
