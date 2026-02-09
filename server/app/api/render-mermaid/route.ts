@@ -207,6 +207,9 @@ export async function POST(request: Request) {
                     flowchart: {
                         htmlLabels: false,
                     },
+                    class: {
+                        htmlLabels: false,
+                    },
                 };
 
                 const mergedConfig: Record<string, unknown> = {
@@ -216,6 +219,11 @@ export async function POST(request: Request) {
                         ...(defaultConfig.flowchart as Record<string, unknown>),
                         ...((data.config as Record<string, unknown> | undefined)
                             ?.flowchart as Record<string, unknown> | undefined),
+                    },
+                    class: {
+                        ...(defaultConfig.class as Record<string, unknown>),
+                        ...((data.config as Record<string, unknown> | undefined)
+                            ?.class as Record<string, unknown> | undefined),
                     },
                 };
 
@@ -239,28 +247,110 @@ export async function POST(request: Request) {
                     return { width, height, lineHeight };
                 };
 
-                const withLabelsToText = (rawElements: any[]) => {
+                const buildClassLabelMap = (source: string) => {
+                    const map: Record<string, string> = {};
+                    const lines = source.split(/\r?\n/);
+                    let i = 0;
+
+                    while (i < lines.length) {
+                        const line = lines[i].trim();
+                        if (!line.startsWith("class ")) {
+                            i += 1;
+                            continue;
+                        }
+
+                        const rest = line.slice(6).trim();
+                        const braceIndex = rest.indexOf("{");
+
+                        if (braceIndex === -1) {
+                            const name = rest.split(/\s+/)[0];
+                            if (name) {
+                                map[name] = name;
+                            }
+                            i += 1;
+                            continue;
+                        }
+
+                        const name = rest.slice(0, braceIndex).trim();
+                        const members: string[] = [];
+                        const after = rest.slice(braceIndex + 1).trim();
+                        if (after && after !== "}") {
+                            const inline = after.replace(/}\s*$/, "").trim();
+                            if (inline) {
+                                members.push(inline);
+                            }
+                        }
+
+                        i += 1;
+                        while (i < lines.length && !lines[i].includes("}")) {
+                            const member = lines[i].trim();
+                            if (member) {
+                                members.push(member);
+                            }
+                            i += 1;
+                        }
+
+                        if (i < lines.length && lines[i].includes("}")) {
+                            const tail = lines[i].split("}")[0].trim();
+                            if (tail) {
+                                members.push(tail);
+                            }
+                        }
+
+                        if (name) {
+                            const text = [name, ...members].join("\n").trim();
+                            map[name] = text || name;
+                        }
+
+                        i += 1;
+                    }
+
+                    return map;
+                };
+
+                const withLabelsToText = (rawElements: any[], classLabelMap: Record<string, string>) => {
                     const elements: any[] = [];
                     const now = Date.now();
 
                     for (const element of rawElements) {
                         const label = element?.label;
-                        if (!label?.text) {
+                        let labelText = label?.text ? String(label.text).trim() : "";
+                        if (!labelText) {
+                            const key = element?.id ?? element?.metadata?.classId;
+                            if (key && classLabelMap[key]) {
+                                labelText = classLabelMap[key];
+                            }
+                        }
+
+                        if (!labelText) {
                             elements.push(element);
                             continue;
                         }
 
                         const fontSize = label.fontSize ?? 20;
-                        const text = String(label.text);
+                        const text = labelText;
                         const { width, height, lineHeight } = measureText(text, fontSize);
 
-                        const cx = (element.x ?? 0) + (element.width ?? 0) / 2;
-                        const cy = (element.y ?? 0) + (element.height ?? 0) / 2;
+                        const isClassLabel =
+                            (element?.id && classLabelMap[element.id])
+                            || (element?.metadata?.classId
+                                && classLabelMap[element.metadata.classId]);
+                        const padding = isClassLabel ? 8 : 4;
+                        const elementX = element.x ?? 0;
+                        const elementY = element.y ?? 0;
+                        const elementWidth = element.width ?? 0;
+                        const elementHeight = element.height ?? 0;
+                        const cx = elementX + elementWidth / 2;
+                        const cy = elementY + elementHeight / 2;
+                        const x = isClassLabel ? elementX + padding : cx - width / 2;
+                        const y = isClassLabel ? elementY + padding : cy - height / 2;
+                        const textAlign = isClassLabel ? "left" : "center";
+                        const verticalAlign = isClassLabel ? "top" : "middle";
                         const textElement = {
                             id: makeId(),
                             type: "text",
-                            x: cx - width / 2,
-                            y: cy - height / 2,
+                            x,
+                            y,
                             width,
                             height,
                             angle: element.angle ?? 0,
@@ -285,8 +375,8 @@ export async function POST(request: Request) {
                             text,
                             fontSize,
                             fontFamily: 1,
-                            textAlign: "center",
-                            verticalAlign: "middle",
+                            textAlign,
+                            verticalAlign,
                             baseline: fontSize,
                             containerId: element.id ?? null,
                             originalText: text,
@@ -308,7 +398,8 @@ export async function POST(request: Request) {
                     return elements;
                 };
 
-                const elements = withLabelsToText(result.elements ?? []);
+                const classLabelMap = buildClassLabelMap(data.mermaid);
+                const elements = withLabelsToText(result.elements ?? [], classLabelMap);
                 const files = result.files ?? {};
 
                 const exportOptions: Record<string, unknown> = {
