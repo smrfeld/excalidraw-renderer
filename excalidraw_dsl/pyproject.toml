@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Minimal DSL renderer for Excalidraw scenes."
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = ["click>=8.1"]
 license = { text = "MIT" }
 authors = [{ name = "Excalidraw DSL" }]
 keywords = ["excalidraw", "dsl", "render"]
