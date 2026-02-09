@@ -3,7 +3,6 @@ import type { Browser } from "playwright";
 import { chromium } from "playwright";
 import path from "path";
 import fs from "fs";
-import { JSDOM } from "jsdom";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -131,247 +130,6 @@ export async function POST(request: Request) {
         }
     }
 
-    let elements: unknown[] = [];
-    let files: Record<string, unknown> = {};
-
-    const dom = new JSDOM("<!doctype html><html><body></body></html>");
-    const originalWindow = (globalThis as any).window;
-    const originalDocument = (globalThis as any).document;
-    const navigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-
-    try {
-        const getNumericAttr = (el: Element, name: string, fallback = 0) => {
-            const raw = el.getAttribute?.(name);
-            if (!raw) {
-                return fallback;
-            }
-            const value = Number.parseFloat(raw);
-            return Number.isFinite(value) ? value : fallback;
-        };
-
-        const getStyleFontSize = (el: Element, fallback = 16) => {
-            const style = el.getAttribute?.("style");
-            if (!style) {
-                return fallback;
-            }
-            const match = style.match(/font-size\s*:\s*([0-9.]+)px/i);
-            if (!match) {
-                return fallback;
-            }
-            const value = Number.parseFloat(match[1]);
-            return Number.isFinite(value) ? value : fallback;
-        };
-
-        const computeBBox = (el: Element): DOMRect => {
-            const tag = el.tagName?.toLowerCase?.() ?? "";
-            if (tag === "text" || tag === "tspan") {
-                const fontSize =
-                    getNumericAttr(el, "font-size", NaN) || getStyleFontSize(el, 16);
-                const text = el.textContent ?? "";
-                const width = Math.max(0, text.length) * fontSize * 0.6;
-                const height = fontSize;
-                return {
-                    x: getNumericAttr(el, "x", 0),
-                    y: getNumericAttr(el, "y", 0) - height,
-                    width,
-                    height,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    toJSON: () => ({}),
-                } as DOMRect;
-            }
-
-            if (tag === "rect" || tag === "image") {
-                const width = getNumericAttr(el, "width", 0);
-                const height = getNumericAttr(el, "height", 0);
-                return {
-                    x: getNumericAttr(el, "x", 0),
-                    y: getNumericAttr(el, "y", 0),
-                    width,
-                    height,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    toJSON: () => ({}),
-                } as DOMRect;
-            }
-
-            if (tag === "circle") {
-                const r = getNumericAttr(el, "r", 0);
-                const cx = getNumericAttr(el, "cx", 0);
-                const cy = getNumericAttr(el, "cy", 0);
-                return {
-                    x: cx - r,
-                    y: cy - r,
-                    width: r * 2,
-                    height: r * 2,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    toJSON: () => ({}),
-                } as DOMRect;
-            }
-
-            if (tag === "ellipse") {
-                const rx = getNumericAttr(el, "rx", 0);
-                const ry = getNumericAttr(el, "ry", 0);
-                const cx = getNumericAttr(el, "cx", 0);
-                const cy = getNumericAttr(el, "cy", 0);
-                return {
-                    x: cx - rx,
-                    y: cy - ry,
-                    width: rx * 2,
-                    height: ry * 2,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    toJSON: () => ({}),
-                } as DOMRect;
-            }
-
-            if (tag === "line") {
-                const x1 = getNumericAttr(el, "x1", 0);
-                const y1 = getNumericAttr(el, "y1", 0);
-                const x2 = getNumericAttr(el, "x2", 0);
-                const y2 = getNumericAttr(el, "y2", 0);
-                const minX = Math.min(x1, x2);
-                const minY = Math.min(y1, y2);
-                const maxX = Math.max(x1, x2);
-                const maxY = Math.max(y1, y2);
-                return {
-                    x: minX,
-                    y: minY,
-                    width: maxX - minX,
-                    height: maxY - minY,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    toJSON: () => ({}),
-                } as DOMRect;
-            }
-
-            if (el.childNodes && (el.childNodes as any).length) {
-                let minX = Number.POSITIVE_INFINITY;
-                let minY = Number.POSITIVE_INFINITY;
-                let maxX = Number.NEGATIVE_INFINITY;
-                let maxY = Number.NEGATIVE_INFINITY;
-                const children = Array.from(el.childNodes) as Element[];
-                for (const child of children) {
-                    if (!(child as any).getBBox) {
-                        continue;
-                    }
-                    const box = (child as any).getBBox();
-                    if (!box) {
-                        continue;
-                    }
-                    minX = Math.min(minX, box.x);
-                    minY = Math.min(minY, box.y);
-                    maxX = Math.max(maxX, box.x + box.width);
-                    maxY = Math.max(maxY, box.y + box.height);
-                }
-
-                if (Number.isFinite(minX) && Number.isFinite(minY)) {
-                    return {
-                        x: minX,
-                        y: minY,
-                        width: maxX - minX,
-                        height: maxY - minY,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        left: 0,
-                        toJSON: () => ({}),
-                    } as DOMRect;
-                }
-            }
-
-            return {
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
-                toJSON: () => ({}),
-            } as DOMRect;
-        };
-
-        const getBBoxPolyfill = function (this: Element) {
-            return computeBBox(this);
-        };
-
-        if (dom.window.SVGElement?.prototype) {
-            (dom.window.SVGElement.prototype as any).getBBox = getBBoxPolyfill as any;
-        }
-
-        if (dom.window.SVGGraphicsElement?.prototype) {
-            (dom.window.SVGGraphicsElement.prototype as any).getBBox = getBBoxPolyfill as any;
-        }
-
-        if ((dom.window as any).SVGTextContentElement?.prototype) {
-            ((dom.window as any).SVGTextContentElement.prototype as any).getBBox =
-                getBBoxPolyfill as any;
-        }
-
-        if ((dom.window as any).SVGTextElement?.prototype) {
-            ((dom.window as any).SVGTextElement.prototype as any).getBBox =
-                getBBoxPolyfill as any;
-        }
-
-        if (dom.window.Element?.prototype) {
-            (dom.window.Element.prototype as any).getBBox = getBBoxPolyfill as any;
-        }
-
-        (globalThis as any).window = dom.window;
-        (globalThis as any).document = dom.window.document;
-        Object.defineProperty(globalThis, "navigator", {
-            configurable: true,
-            enumerable: true,
-            writable: true,
-            value: dom.window.navigator,
-        });
-
-        const { parseMermaidToExcalidraw } = await import(
-            "@excalidraw/mermaid-to-excalidraw"
-        );
-
-        const result = await parseMermaidToExcalidraw(
-            payload.mermaid,
-            payload.config ?? {},
-        );
-        elements = result.elements;
-        files = result.files ?? {};
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Mermaid parse failed";
-        return NextResponse.json({ error: message }, { status: 400 });
-    } finally {
-        if (originalWindow === undefined) {
-            delete (globalThis as any).window;
-        } else {
-            (globalThis as any).window = originalWindow;
-        }
-
-        if (originalDocument === undefined) {
-            delete (globalThis as any).document;
-        } else {
-            (globalThis as any).document = originalDocument;
-        }
-
-        if (navigatorDescriptor) {
-            Object.defineProperty(globalThis, "navigator", navigatorDescriptor);
-        } else {
-            delete (globalThis as any).navigator;
-        }
-    }
-
     const browser = await getBrowser();
     const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
     const pageErrors: string[] = [];
@@ -421,20 +179,145 @@ export async function POST(request: Request) {
             }
         });
 
+        await page.addScriptTag({
+            type: "module",
+            content: `
+                import { parseMermaidToExcalidraw } from "https://esm.sh/@excalidraw/mermaid-to-excalidraw@1.1.4";
+                window.__parseMermaidToExcalidraw = parseMermaidToExcalidraw;
+            `,
+        });
+
+        await page.waitForFunction(
+            () => typeof (window as any).__parseMermaidToExcalidraw === "function",
+        );
+
         const bytes = await page.evaluate(
             async (data) => {
                 const lib = (window as unknown as { ExcalidrawLib?: any }).ExcalidrawLib;
                 if (!lib?.exportToBlob) {
                     throw new Error("Excalidraw export library not available");
                 }
+                const parseMermaidToExcalidraw =
+                    (window as any).__parseMermaidToExcalidraw as (
+                        mermaid: string,
+                        config?: Record<string, unknown>,
+                    ) => Promise<{ elements: unknown[]; files?: Record<string, unknown> }>;
+
+                const defaultConfig: Record<string, unknown> = {
+                    flowchart: {
+                        htmlLabels: false,
+                    },
+                };
+
+                const mergedConfig: Record<string, unknown> = {
+                    ...defaultConfig,
+                    ...(data.config ?? {}),
+                    flowchart: {
+                        ...(defaultConfig.flowchart as Record<string, unknown>),
+                        ...((data.config as Record<string, unknown> | undefined)
+                            ?.flowchart as Record<string, unknown> | undefined),
+                    },
+                };
+
+                const result = await parseMermaidToExcalidraw(
+                    data.mermaid,
+                    mergedConfig,
+                );
+
+                const makeId = () => Math.random().toString(36).slice(2, 10);
+                const makeNonce = () => Math.floor(Math.random() * 2_147_483_647);
+
+                const measureText = (text: string, fontSize: number) => {
+                    const lines = text.split("\n");
+                    const maxLine = lines.reduce(
+                        (max, line) => Math.max(max, line.length),
+                        0,
+                    );
+                    const width = maxLine * fontSize * 0.6;
+                    const lineHeight = 1.25;
+                    const height = lines.length * fontSize * lineHeight;
+                    return { width, height, lineHeight };
+                };
+
+                const withLabelsToText = (rawElements: any[]) => {
+                    const elements: any[] = [];
+                    const now = Date.now();
+
+                    for (const element of rawElements) {
+                        const label = element?.label;
+                        if (!label?.text) {
+                            elements.push(element);
+                            continue;
+                        }
+
+                        const fontSize = label.fontSize ?? 20;
+                        const text = String(label.text);
+                        const { width, height, lineHeight } = measureText(text, fontSize);
+
+                        const cx = (element.x ?? 0) + (element.width ?? 0) / 2;
+                        const cy = (element.y ?? 0) + (element.height ?? 0) / 2;
+                        const textElement = {
+                            id: makeId(),
+                            type: "text",
+                            x: cx - width / 2,
+                            y: cy - height / 2,
+                            width,
+                            height,
+                            angle: element.angle ?? 0,
+                            strokeColor: element.label?.strokeColor ?? element.strokeColor ?? "#1e1e1e",
+                            backgroundColor: "transparent",
+                            fillStyle: "solid",
+                            strokeWidth: 1,
+                            strokeStyle: "solid",
+                            roughness: 0,
+                            opacity: element.opacity ?? 100,
+                            groupIds: label.groupIds ?? element.groupIds ?? [],
+                            frameId: element.frameId ?? null,
+                            roundness: null,
+                            seed: makeNonce(),
+                            version: 1,
+                            versionNonce: makeNonce(),
+                            isDeleted: false,
+                            boundElements: null,
+                            updated: now,
+                            link: null,
+                            locked: false,
+                            text,
+                            fontSize,
+                            fontFamily: 1,
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            baseline: fontSize,
+                            containerId: element.id ?? null,
+                            originalText: text,
+                            lineHeight,
+                        };
+
+                        if (element.id) {
+                            const bound = Array.isArray(element.boundElements)
+                                ? element.boundElements
+                                : [];
+                            bound.push({ id: textElement.id, type: "text" });
+                            element.boundElements = bound;
+                        }
+
+                        delete element.label;
+                        elements.push(element, textElement);
+                    }
+
+                    return elements;
+                };
+
+                const elements = withLabelsToText(result.elements ?? []);
+                const files = result.files ?? {};
 
                 const exportOptions: Record<string, unknown> = {
-                    elements: data.elements,
+                    elements,
                     appState: {
                         exportWithDarkMode: data.darkMode ?? false,
                         viewBackgroundColor: data.backgroundColor ?? "#ffffff",
                     },
-                    files: data.files ?? {},
+                    files,
                     mimeType: "image/png",
                 };
 
@@ -464,8 +347,8 @@ export async function POST(request: Request) {
                 return Array.from(new Uint8Array(buffer));
             },
             {
-                elements,
-                files,
+                mermaid: payload.mermaid,
+                config: payload.config ?? {},
                 exportScale: payload.exportScale,
                 exportPadding: payload.exportPadding,
                 maxSize: payload.maxSize,

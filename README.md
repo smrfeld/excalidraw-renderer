@@ -2,6 +2,8 @@
 
 Render Excalidraw drawings to images. A Python API sends JSON files to a server. The API can be accessed from CLI or as a Python package.
 
+The input formats can be JSON or Mermaid diagrams.
+
 ## Run
 
 In the main directory, start the server:
@@ -70,6 +72,30 @@ More outputs:
 
 ![](examples_output/example2.png)
 ![](examples_output/example3.png)
+
+### Mermaid
+
+See the [examples_mermaid](examples_mermaid) and [examples_mermaid_output](examples_mermaid_output) directories.
+
+Input:
+
+```mmd
+flowchart TD
+  A[Start] --> B{Decision}
+  B -->|Yes| C[Do thing]
+  B -->|No| D[Other path]
+  C --> E[Finish]
+  D --> E[Finish]
+```
+
+Output:
+
+![](examples_mermaid_output/flowchart.png)
+
+More outputs:
+
+![](examples_mermaid_output/classdiagram.png)
+![](examples_mermaid_output/sequence.png)
 
 ## Other server commands
 
