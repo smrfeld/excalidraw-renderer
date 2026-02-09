@@ -197,6 +197,9 @@ export async function POST(request: Request) {
                 if (!lib?.exportToBlob) {
                     throw new Error("Excalidraw export library not available");
                 }
+                if (!lib?.convertToExcalidrawElements) {
+                    throw new Error("Excalidraw conversion helper not available");
+                }
                 const parseMermaidToExcalidraw =
                     (window as any).__parseMermaidToExcalidraw as (
                         mermaid: string,
@@ -232,174 +235,10 @@ export async function POST(request: Request) {
                     mergedConfig,
                 );
 
-                const makeId = () => Math.random().toString(36).slice(2, 10);
-                const makeNonce = () => Math.floor(Math.random() * 2_147_483_647);
-
-                const measureText = (text: string, fontSize: number) => {
-                    const lines = text.split("\n");
-                    const maxLine = lines.reduce(
-                        (max, line) => Math.max(max, line.length),
-                        0,
-                    );
-                    const width = maxLine * fontSize * 0.6;
-                    const lineHeight = 1.25;
-                    const height = lines.length * fontSize * lineHeight;
-                    return { width, height, lineHeight };
-                };
-
-                const buildClassLabelMap = (source: string) => {
-                    const map: Record<string, string> = {};
-                    const lines = source.split(/\r?\n/);
-                    let i = 0;
-
-                    while (i < lines.length) {
-                        const line = lines[i].trim();
-                        if (!line.startsWith("class ")) {
-                            i += 1;
-                            continue;
-                        }
-
-                        const rest = line.slice(6).trim();
-                        const braceIndex = rest.indexOf("{");
-
-                        if (braceIndex === -1) {
-                            const name = rest.split(/\s+/)[0];
-                            if (name) {
-                                map[name] = name;
-                            }
-                            i += 1;
-                            continue;
-                        }
-
-                        const name = rest.slice(0, braceIndex).trim();
-                        const members: string[] = [];
-                        const after = rest.slice(braceIndex + 1).trim();
-                        if (after && after !== "}") {
-                            const inline = after.replace(/}\s*$/, "").trim();
-                            if (inline) {
-                                members.push(inline);
-                            }
-                        }
-
-                        i += 1;
-                        while (i < lines.length && !lines[i].includes("}")) {
-                            const member = lines[i].trim();
-                            if (member) {
-                                members.push(member);
-                            }
-                            i += 1;
-                        }
-
-                        if (i < lines.length && lines[i].includes("}")) {
-                            const tail = lines[i].split("}")[0].trim();
-                            if (tail) {
-                                members.push(tail);
-                            }
-                        }
-
-                        if (name) {
-                            const text = [name, ...members].join("\n").trim();
-                            map[name] = text || name;
-                        }
-
-                        i += 1;
-                    }
-
-                    return map;
-                };
-
-                const withLabelsToText = (rawElements: any[], classLabelMap: Record<string, string>) => {
-                    const elements: any[] = [];
-                    const now = Date.now();
-
-                    for (const element of rawElements) {
-                        const label = element?.label;
-                        let labelText = label?.text ? String(label.text).trim() : "";
-                        if (!labelText) {
-                            const key = element?.id ?? element?.metadata?.classId;
-                            if (key && classLabelMap[key]) {
-                                labelText = classLabelMap[key];
-                            }
-                        }
-
-                        if (!labelText) {
-                            elements.push(element);
-                            continue;
-                        }
-
-                        const fontSize = label.fontSize ?? 20;
-                        const text = labelText;
-                        const { width, height, lineHeight } = measureText(text, fontSize);
-
-                        const isClassLabel =
-                            (element?.id && classLabelMap[element.id])
-                            || (element?.metadata?.classId
-                                && classLabelMap[element.metadata.classId]);
-                        const padding = isClassLabel ? 8 : 4;
-                        const elementX = element.x ?? 0;
-                        const elementY = element.y ?? 0;
-                        const elementWidth = element.width ?? 0;
-                        const elementHeight = element.height ?? 0;
-                        const cx = elementX + elementWidth / 2;
-                        const cy = elementY + elementHeight / 2;
-                        const x = isClassLabel ? elementX + padding : cx - width / 2;
-                        const y = isClassLabel ? elementY + padding : cy - height / 2;
-                        const textAlign = isClassLabel ? "left" : "center";
-                        const verticalAlign = isClassLabel ? "top" : "middle";
-                        const textElement = {
-                            id: makeId(),
-                            type: "text",
-                            x,
-                            y,
-                            width,
-                            height,
-                            angle: element.angle ?? 0,
-                            strokeColor: element.label?.strokeColor ?? element.strokeColor ?? "#1e1e1e",
-                            backgroundColor: "transparent",
-                            fillStyle: "solid",
-                            strokeWidth: 1,
-                            strokeStyle: "solid",
-                            roughness: 0,
-                            opacity: element.opacity ?? 100,
-                            groupIds: label.groupIds ?? element.groupIds ?? [],
-                            frameId: element.frameId ?? null,
-                            roundness: null,
-                            seed: makeNonce(),
-                            version: 1,
-                            versionNonce: makeNonce(),
-                            isDeleted: false,
-                            boundElements: null,
-                            updated: now,
-                            link: null,
-                            locked: false,
-                            text,
-                            fontSize,
-                            fontFamily: 1,
-                            textAlign,
-                            verticalAlign,
-                            baseline: fontSize,
-                            containerId: element.id ?? null,
-                            originalText: text,
-                            lineHeight,
-                        };
-
-                        if (element.id) {
-                            const bound = Array.isArray(element.boundElements)
-                                ? element.boundElements
-                                : [];
-                            bound.push({ id: textElement.id, type: "text" });
-                            element.boundElements = bound;
-                        }
-
-                        delete element.label;
-                        elements.push(element, textElement);
-                    }
-
-                    return elements;
-                };
-
-                const classLabelMap = buildClassLabelMap(data.mermaid);
-                const elements = withLabelsToText(result.elements ?? [], classLabelMap);
+                const elements = lib.convertToExcalidrawElements(
+                    result.elements ?? [],
+                    { regenerateIds: false },
+                );
                 const files = result.files ?? {};
 
                 const exportOptions: Record<string, unknown> = {
