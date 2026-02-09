@@ -4,8 +4,54 @@ from pathlib import Path
 
 import click
 from tqdm import tqdm
-
+from typing import Callable
 from excalidraw_renderer.client import render_mermaid, render_png
+
+
+def _render_files(
+    *,
+    input_path: Path,
+    output_path: Path,
+    pattern: str,
+    render: Callable,
+    render_kwargs: dict[str, object],
+) -> None:
+    if input_path.is_dir():
+        if output_path.exists() and output_path.is_file():
+            raise click.ClickException(
+                "When input is a directory, output must be a directory"
+            )
+        if output_path.suffix:
+            raise click.ClickException(
+                "Output must be a directory path when input is a directory"
+            )
+
+        output_path.mkdir(parents=True, exist_ok=True)
+        files = sorted(input_path.glob(pattern))
+        if not files:
+            raise click.ClickException(f"No {pattern} files found in input directory")
+
+        for file_path in tqdm(files, desc="Rendering", unit="file"):
+            out_path = output_path / f"{file_path.stem}.png"
+            try:
+                render(file_path, out_path, **render_kwargs)
+            except RuntimeError as exc:
+                raise click.ClickException(f"{file_path.name}: {exc}") from exc
+
+        click.echo(f"Wrote {len(files)} file(s) to {output_path}")
+        return
+
+    if output_path.exists() and output_path.is_dir():
+        out_file = output_path / f"{input_path.stem}.png"
+    else:
+        out_file = output_path
+
+    try:
+        render(input_path, out_file, **render_kwargs)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(f"Wrote {out_file}")
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -52,65 +98,28 @@ def render_command(
 ) -> None:
     """Render Excalidraw JSON file(s) to PNG via the local render API."""
 
-    if input.is_dir():
-        if output.exists() and output.is_file():
-            raise click.ClickException(
-                "When input is a directory, output must be a directory"
-            )
-        if output.suffix:
-            raise click.ClickException(
-                "Output must be a directory path when input is a directory"
-            )
+    render_kwargs = {
+        "endpoint": endpoint,
+        "export_scale": scale,
+        "export_padding": padding,
+        "max_size": max_size,
+        "quality": quality,
+        "background_color": background,
+        "dark_mode": dark,
+    }
 
-        output.mkdir(parents=True, exist_ok=True)
-        json_files = sorted(input.glob("*.json"))
-        if not json_files:
-            raise click.ClickException("No .json files found in input directory")
-
-        for json_path in tqdm(json_files, desc="Rendering", unit="file"):
-            out_path = output / f"{json_path.stem}.png"
-            try:
-                render_png(
-                    json_path,
-                    out_path,
-                    endpoint=endpoint,
-                    export_scale=scale,
-                    export_padding=padding,
-                    max_size=max_size,
-                    quality=quality,
-                    background_color=background,
-                    dark_mode=dark,
-                )
-            except RuntimeError as exc:
-                raise click.ClickException(f"{json_path.name}: {exc}") from exc
-
-        click.echo(f"Wrote {len(json_files)} file(s) to {output}")
-        return
-
-    if output.exists() and output.is_dir():
-        raise click.ClickException("When input is a file, output must be a file path")
-
-    try:
-        render_png(
-            input,
-            output,
-            endpoint=endpoint,
-            export_scale=scale,
-            export_padding=padding,
-            max_size=max_size,
-            quality=quality,
-            background_color=background,
-            dark_mode=dark,
-        )
-    except RuntimeError as exc:
-        raise click.ClickException(str(exc)) from exc
-
-    click.echo(f"Wrote {output}")
+    _render_files(
+        input_path=input,
+        output_path=output,
+        pattern="*.json",
+        render=render_png,
+        render_kwargs=render_kwargs,
+    )
 
 
 @main.command("mermaid")
-@click.argument("input", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument("output", type=click.Path(dir_okay=False, path_type=Path))
+@click.argument("input", type=click.Path(exists=True, path_type=Path))
+@click.argument("output", type=click.Path(path_type=Path))
 @click.option(
     "--endpoint",
     default="http://localhost:3000/api/render-mermaid",
@@ -146,22 +155,23 @@ def mermaid_command(
     dark: bool,
 ) -> None:
     """Render a Mermaid diagram text file to PNG via the local render API."""
-    try:
-        render_mermaid(
-            input,
-            output,
-            endpoint=endpoint,
-            export_scale=scale,
-            export_padding=padding,
-            max_size=max_size,
-            quality=quality,
-            background_color=background,
-            dark_mode=dark,
-        )
-    except RuntimeError as exc:
-        raise click.ClickException(str(exc)) from exc
+    render_kwargs = {
+        "endpoint": endpoint,
+        "export_scale": scale,
+        "export_padding": padding,
+        "max_size": max_size,
+        "quality": quality,
+        "background_color": background,
+        "dark_mode": dark,
+    }
 
-    click.echo(f"Wrote {output}")
+    _render_files(
+        input_path=input,
+        output_path=output,
+        pattern="*.mmd",
+        render=render_mermaid,
+        render_kwargs=render_kwargs,
+    )
 
 
 if __name__ == "__main__":
